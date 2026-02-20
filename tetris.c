@@ -8,7 +8,7 @@
 // Estrutura que representa uma peça do Tetris
 typedef struct {
     char nome;  
-    int id;     // Identificador único
+    int id;    
 } Peca;
 
 // Estrutura que representa a fila circular
@@ -32,8 +32,10 @@ int contadorID = 0;
 Peca gerarPeca() {
     char tipos[] = {'I', 'O', 'T', 'L'};
     Peca nova;
+
     nova.nome = tipos[rand() % 4]; // Escolhe tipo aleatório
     nova.id = contadorID++; // Atribui ID único
+
     return nova;
 }
 
@@ -57,9 +59,19 @@ void inicializarPilha(Pilha *p) {
 }
 
 // Verificações auxiliares
-int pilhaVazia(Pilha *p) { return p->topo == -1; }
-int pilhaCheia(Pilha *p) { return p->topo == TAMANHO_PILHA - 1; }
+int filaVazia(Fila *f) {
+    return f->quantidade == 0;
+}
 
+int pilhaCheia(Pilha *p) {
+    return p->topo == TAMANHO_PILHA - 1;
+}
+
+int pilhaVazia(Pilha *p) {
+    return p->topo == -1;
+}
+
+// Remove uma peça da fila (dequeue) 
 Peca removerDaFila(Fila *f) {
     Peca removida = f->elementos[f->inicio];
     f->inicio = (f->inicio + 1) % TAMANHO_FILA;
@@ -67,83 +79,62 @@ Peca removerDaFila(Fila *f) {
     return removida;
 }
 
+// Adiciona nova peça na fila (enqueue)
 void adicionarNovaNaFila(Fila *f) {
     f->elementos[f->fim] = gerarPeca();
     f->fim = (f->fim + 1) % TAMANHO_FILA;
     f->quantidade++;
 }
 
-// Jogar peça (remove da fila e gera nova)
+// Jogar peça da frente da fila
 void jogarPeca(Fila *f) {
+    if (filaVazia(f)) {
+        printf("\nFila vazia!\n");
+        return;
+    }
+
     Peca jogada = removerDaFila(f);
     printf("\nPeça jogada: [%c %d]\n", jogada.nome, jogada.id);
+
     adicionarNovaNaFila(f);
 }
 
 // Reservar peça (fila -> pilha)
 void reservarPeca(Fila *f, Pilha *p) {
     if (pilhaCheia(p)) {
-        printf("\nPilha cheia! Não é possível reservar.\n");
+        printf("\nPilha de reserva cheia!\n");
         return;
     }
 
-    Peca movida = removerDaFila(f);
-    p->elementos[++p->topo] = movida;
+    Peca reservada = removerDaFila(f);
 
-    printf("\nPeça enviada para reserva: [%c %d]\n", movida.nome, movida.id);
+    p->topo++;
+    p->elementos[p->topo] = reservada;
+
+    printf("\nPeça reservada: [%c %d]\n", reservada.nome, reservada.id);
+
     adicionarNovaNaFila(f);
 }
 
-// Usar peça reservada 
+// Usar peça reservada (pilha -> jogo)
 void usarReserva(Pilha *p) {
     if (pilhaVazia(p)) {
         printf("\nPilha vazia!\n");
         return;
     }
 
-    Peca usada = p->elementos[p->topo--];
+    Peca usada = p->elementos[p->topo];
+    p->topo--;
+
     printf("\nPeça usada da reserva: [%c %d]\n", usada.nome, usada.id);
-}
-
-// Troca simples entre frente da fila e topo da pilha
-void trocarAtual(Fila *f, Pilha *p) {
-    if (pilhaVazia(p)) {
-        printf("\nPilha vazia! Não é possível trocar.\n");
-        return;
-    }
-
-    Peca temp = f->elementos[f->inicio];
-    f->elementos[f->inicio] = p->elementos[p->topo];
-    p->elementos[p->topo] = temp;
-
-    printf("\nTroca realizada entre frente da fila e topo da pilha.\n");
-}
-
-// Troca múltipla entre os 3 primeiros da fila e os 3 da pilha
-void trocaMultipla(Fila *f, Pilha *p) {
-    if (p->topo < 2 || f->quantidade < 3) {
-        printf("\nNão há peças suficientes para troca múltipla.\n");
-        return;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        int indiceFila = (f->inicio + i) % TAMANHO_FILA;
-        int indicePilha = p->topo - i;
-
-        Peca temp = f->elementos[indiceFila];
-        f->elementos[indiceFila] = p->elementos[indicePilha];
-        p->elementos[indicePilha] = temp;
-    }
-
-    printf("\nTroca realizada entre os 3 primeiros da fila e os 3 da pilha.\n");
 }
 
 // Exibir estado atual da fila e pilha
 void exibirEstado(Fila *f, Pilha *p) {
-    printf("\n==============================================\n");
+    printf("\n==========================================\n");
     printf("Estado atual:\n\n");
 
-    printf("Fila de peças: ");
+    printf("Fila de peças:\n");
     int indice = f->inicio;
     for (int i = 0; i < f->quantidade; i++) {
         printf("[%c %d] ", f->elementos[indice].nome,
@@ -151,7 +142,7 @@ void exibirEstado(Fila *f, Pilha *p) {
         indice = (indice + 1) % TAMANHO_FILA;
     }
 
-    printf("\nPilha de reserva (Topo -> Base): ");
+    printf("\n\nPilha de reserva (Topo -> Base):\n");
     if (pilhaVazia(p)) {
         printf("[Vazia]");
     } else {
@@ -161,19 +152,17 @@ void exibirEstado(Fila *f, Pilha *p) {
         }
     }
 
-    printf("\n==============================================\n");
+    printf("\n==========================================\n");
 }
 
 // Menu de opções
 void menu() {
-    printf("\nOpções disponíveis:\n");
-    printf("1 - Jogar peça da frente da fila\n");
-    printf("2 - Enviar peça da fila para a pilha\n");
-    printf("3 - Usar peça da pilha\n");
-    printf("4 - Trocar peça da frente com topo da pilha\n");
-    printf("5 - Trocar 3 primeiras da fila com 3 da pilha\n");
+    printf("\nOpções de Ação:\n");
+    printf("1 - Jogar peça\n");
+    printf("2 - Reservar peça\n");
+    printf("3 - Usar peça reservada\n");
     printf("0 - Sair\n");
-    printf("Opção escolhida: ");
+    printf("Opção: ");
 }
 
 // Função principal
@@ -194,13 +183,20 @@ int main() {
         scanf("%d", &opcao);
 
         switch (opcao) {
-            case 1: jogarPeca(&fila); break;
-            case 2: reservarPeca(&fila, &pilha); break;
-            case 3: usarReserva(&pilha); break;
-            case 4: trocarAtual(&fila, &pilha); break;
-            case 5: trocaMultipla(&fila, &pilha); break;
-            case 0: printf("\nObrigado por jogar! Encerrando programa...\n"); break;
-            default: printf("\nOpção inválida!\n");
+            case 1:
+                jogarPeca(&fila);
+                break;
+            case 2:
+                reservarPeca(&fila, &pilha);
+                break;
+            case 3:
+                usarReserva(&pilha);
+                break;
+            case 0:
+                printf("\nObrigado por jogar! Encerrando programa...\n");
+                break;
+            default:
+                printf("\nOpção inválida!\n");
         }
 
     } while (opcao != 0);
