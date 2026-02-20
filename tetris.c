@@ -194,12 +194,18 @@ int main() {
         scanf("%d", &opcao);
 
         switch (opcao) {
-            case 1: jogarPeca(&fila); break;
-            case 2: reservarPeca(&fila, &pilha); break;
-            case 3: usarReserva(&pilha); break;
-            case 4: trocarAtual(&fila, &pilha); break;
-            case 5: trocaMultipla(&fila, &pilha); break;
-            case 0: printf("\nObrigado por jogar! Encerrando programa...\n"); break;
+            case 1: jogarPeca(&fila);
+            break;
+            case 2: reservarPeca(&fila, &pilha);
+            break;
+            case 3: usarReserva(&pilha);
+            break;
+            case 4: trocarAtual(&fila, &pilha);
+            break;
+            case 5: trocaMultipla(&fila, &pilha);
+            break;
+            case 0: printf("\nObrigado por jogar! Encerrando programa...\n");
+            break;
             default: printf("\nOpção inválida!\n");
         }
 
